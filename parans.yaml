@@ -1,0 +1,3 @@
+model:
+  test_path : data/processed/test
+  image_size : 
