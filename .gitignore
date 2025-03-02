@@ -1,3 +1,4 @@
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -60,6 +61,7 @@ target/
 .env
 .venv/
 data/
+data_source/
 
 # Database
 *.db
