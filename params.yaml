@@ -6,9 +6,9 @@ raw_data:
   data_src: data_source
 
 load_data:
-  num_classes: 8
+  num_classes: 4
   raw_data: data_source
-  preproseesd_data: data/processed
+  preprocessed_data: data/processed
   full_path: deep_learning/data_source
 
 train:

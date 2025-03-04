@@ -1,70 +1,56 @@
-from logging import root
 import os
 import shutil
 import argparse
 import yaml
-import pandas as pd
-import numpy as np
-import random
-from get_data import get_data, read_params
- 
- 
+from get_data import get_data
+
 def train_and_test(config_file):
     config = get_data(config_file)
     root_dir = config['raw_data']['data_src']
-    dest = config['load_data']['preproseesd_data']
-   
-    # Create destination directories if they don't exist
+    dest = config['load_data']['preprocessed_data']
+    
+    # Create destination directories (train & test)
     os.makedirs(os.path.join(dest, 'train'), exist_ok=True)
     os.makedirs(os.path.join(dest, 'test'), exist_ok=True)
-   
-    # Brain tumor classes
-    classes = ['no_tumor', 'pituitary_tumor', 'meningioma_tumor', 'glioma_tumor']
-   
+
+    # Mapping original class names to generic class labels
+    class_mapping = {
+        'no_tumor': 'class_0',
+        'pituitary_tumor': 'class_1',
+        'meningioma_tumor': 'class_2',
+        'glioma_tumor': 'class_3'
+    }
+
     # Create class directories in train and test
-    for class_name in classes:
-        os.makedirs(os.path.join(dest, 'train', class_name), exist_ok=True)
-        os.makedirs(os.path.join(dest, 'test', class_name), exist_ok=True)
-   
-    # Copy files from Training directory
-    training_dir = os.path.join(root_dir, 'Training')
-    for class_name in classes:
-        src_dir = os.path.join(training_dir, class_name)
-        if not os.path.exists(src_dir):
-            print(f"Warning: Directory {src_dir} does not exist. Skipping...")
-            continue
-           
-        files = os.listdir(src_dir)
-        print(f"{class_name} (Training) -> {len(files)} images")
-       
-        for f in files:
-            src_path = os.path.join(src_dir, f)
-            dst_path = os.path.join(dest, 'train', class_name, f)
-            shutil.copy(src_path, dst_path)
-           
-        print(f"Done copying training data for {class_name}")
-   
-    # Copy files from Testing directory
-    testing_dir = os.path.join(root_dir, 'Testing')
-    for class_name in classes:
-        src_dir = os.path.join(testing_dir, class_name)
-        if not os.path.exists(src_dir):
-            print(f"Warning: Directory {src_dir} does not exist. Skipping...")
-            continue
-           
-        files = os.listdir(src_dir)
-        print(f"{class_name} (Testing) -> {len(files)} images")
-       
-        for f in files:
-            src_path = os.path.join(src_dir, f)
-            dst_path = os.path.join(dest, 'test', class_name, f)
-            shutil.copy(src_path, dst_path)
-           
-        print(f"Done copying testing data for {class_name}")
- 
- 
-if __name__=='__main__':
-    args=argparse.ArgumentParser()
-    args.add_argument('--config',default='params.yaml')
-    passed_args=args.parse_args()
+    for class_label in class_mapping.values():
+        os.makedirs(os.path.join(dest, 'train', class_label), exist_ok=True)
+        os.makedirs(os.path.join(dest, 'test', class_label), exist_ok=True)
+
+    # Function to copy images
+    def copy_images(src_parent, dst_parent):
+        for original_class, new_class in class_mapping.items():
+            src_dir = os.path.join(src_parent, original_class)
+            dst_dir = os.path.join(dst_parent, new_class)
+            
+            if not os.path.exists(src_dir):
+                print(f"Warning: Directory {src_dir} does not exist. Skipping...")
+                continue
+            
+            files = os.listdir(src_dir)
+            print(f"{original_class} -> {new_class} ({len(files)} images)")
+
+            for f in files:
+                shutil.copy(os.path.join(src_dir, f), os.path.join(dst_dir, f))
+
+            print(f"Done copying {original_class} -> {new_class}")
+
+    # Copy training and testing data
+    copy_images(os.path.join(root_dir, 'Training'), os.path.join(dest, 'train'))
+    copy_images(os.path.join(root_dir, 'Testing'), os.path.join(dest, 'test'))
+
+
+if __name__ == '__main__':
+    args = argparse.ArgumentParser()
+    args.add_argument('--config', default='params.yaml')
+    passed_args = args.parse_args()
     train_and_test(config_file=passed_args.config)

@@ -9,7 +9,7 @@ from get_data import get_data, read_params
 ################# CREATING FOLDER - START ################
 def create_fold(config, image=None):
     config=get_data(config)
-    dirr = config['load_data']['preproseesd_data']
+    dirr = config['load_data']['preprocessed_data']
     cla = config['load_data']['num_classes']
     #print(dirr)
     #print(cla)

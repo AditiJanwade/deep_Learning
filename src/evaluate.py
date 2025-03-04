@@ -1,5 +1,7 @@
+
 from keras.models import load_model
 from sklearn.metrics import confusion_matrix, classification_report
+import os
 import numpy as np
 import argparse
 from get_data import get_data
@@ -14,45 +16,39 @@ def m_evaluate(config_file):
     class_mode = config['img_augment']['class_mode']
     te_set = config['model']['test_path']
     model = load_model('models/trained.h5')
+    config = get_data(config_file)
 
-    test_gen = ImageDataGenerator(rescale=1.0 / 255)
+    test_gen = ImageDataGenerator(rescale = 1./255)
     test_set = test_gen.flow_from_directory(te_set,
-                                            target_size=(225, 225),
-                                            batch_size=batch,
-                                            class_mode=class_mode,
-                                            shuffle=False)
+                                        target_size=(255, 255),  # FIXED SIZE
+                                        batch_size=batch,
+                                        class_mode=class_mode)
 
-    target_names = list(test_set.class_indices.keys())
+    label_map=(test_set.class_indices)
+    print(label_map)
 
-    print("Model output shape:", model.output.shape)
-    print("Expected classes:", target_names)
-
-    # Predict on test data
-    Y_pred = model.predict(test_set, verbose=1)
+    Y_pred = model.predict(test_set, len(test_set))
     y_pred = np.argmax(Y_pred, axis=1)
-
-    print("Model is predicting:", np.unique(y_pred))
-
     print("Confusion Matrix")
-    cm = confusion_matrix(test_set.classes, y_pred)
-    plt.figure(figsize=(8, 6))
-    sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", xticklabels=target_names, yticklabels=target_names)
-    plt.xlabel("Predicted Labels")
-    plt.ylabel("True Labels")
-    plt.title("Confusion Matrix")
-    plt.savefig('reports/Confusion_Matrix.png')
+    sns.heatmap(confusion_matrix(test_set.classes,y_pred),annot=True)
+    plt.xlabel('Actual vlaues,0:Bulbasaur, 1:Charmander, 2: Squirtle,3:Tauros')
+    plt.ylabel('Predicted Value,0:Bulbasaur, 1:Charmander, 2: Squirtle,3:Tauros')
+    plt.savefig('reports/Confusion_Matrix')
+    #plt.show()
 
     print("Classification Report")
-    report = classification_report(test_set.classes, y_pred, labels=np.arange(len(target_names)), target_names=target_names, output_dict=True)
-    df = pd.DataFrame(report).T
-    df['support'] = df['support'].astype(int)
-    df.to_csv('reports/classification_report.csv')
+    target_names = ['Bulbasaur','Charmander','Squirtle','Tauros']
+    df =pd.DataFrame(classification_report(test_set.classes, y_pred, target_names=target_names, output_dict=True)).T
+    df['support']=df.support.apply(int)
+    df.style.background_gradient(cmap='viridis',subset=pd.IndexSlice['0':'9','f1-score'])
+    df.to_csv('reports/classification_report')
+    print('Classification Report and Confusion Matrix Report are saved in reports folder of Template')
 
-    print('Classification Report and Confusion Matrix saved in reports folder')
 
 
 if __name__ == '__main__':
+
     args_parser = argparse.ArgumentParser()
-    args_parser.add_argument('--config', default='params.yaml')
+    args_parser.add_argument('--config',default='params.yaml')
     passed_args = args_parser.parse_args()
     m_evaluate(config_file=passed_args.config)
